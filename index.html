@@ -33,7 +33,7 @@
                     <div class="mt-1">
                         <input type="text" name="student-id" id="student-id" 
                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border"
-                               placeholder="e.g., 12345678">
+                               placeholder="e.g., 12345678" required>
                     </div>
                 </div>
                 
@@ -44,7 +44,7 @@
                         <input type="text" name="full-name" id="full-name" 
                                autocomplete="name"
                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border"
-                               placeholder="e.g., Jane Doe">
+                               placeholder="e.g., Jane Doe" required>
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
                         <input id="school-email" name="school-email" type="email" 
                                autocomplete="email"
                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-3 border"
-                               placeholder="e.g., jane.doe@school.edu">
+                               placeholder="e.g., jane.doe@school.edu" required>
                     </div>
                 </div>
 
@@ -78,7 +78,7 @@
 
     <script type="module">
         // 1. Initialize Supabase
-        // The keys below are now your actual project keys!
+        // The keys below are your project keys!
         const SUPABASE_URL = 'https://egqfothiwzcbyajaiftj.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_8PphXvTLOpaqfbRlh_1W7A_ka4j7wXZ'; 
 
@@ -123,7 +123,6 @@
             // ---------------------------------
 
             // 4. Send data to Supabase
-            // This assumes your table is named 'students'
             const { error } = await supabaseClient
                 .from('students')
                 .insert([
@@ -138,12 +137,23 @@
             if (error) {
                 // Handle error
                 console.error('Error inserting data:', error);
-                // Check for RLS error which is common
-                if (error.code === 'PGRST001' || error.message.includes('permission denied')) {
-                     messageArea.textContent = `Error: Cannot save data. Please check your Supabase Row Level Security (RLS) policies for the 'students' table.`;
-                } else {
-                     messageArea.textContent = `Error: ${error.message}`;
+                
+                let errorMessage = `Error: Submission failed.`;
+                
+                // Supabase error code for unique constraint violation is '23505'
+                if (error.code === '23505') {
+                    if (error.message.includes('student_id')) {
+                        errorMessage = `Error: This Student ID has already been submitted.`;
+                    } else if (error.message.includes('school_email')) {
+                        errorMessage = `Error: This School Email has already been used.`;
+                    }
                 }
+                // Check for RLS error
+                else if (error.code === 'PGRST001' || error.message.includes('permission denied')) {
+                     errorMessage = `Error: Cannot save data. Check RLS policies for the 'students' table.`;
+                } 
+                
+                messageArea.textContent = errorMessage;
                 messageArea.className = 'text-sm text-center text-red-600 font-medium';
                 submitButton.disabled = false;
                 submitButton.textContent = 'Submit';
