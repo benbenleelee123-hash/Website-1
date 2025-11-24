@@ -6,7 +6,7 @@
     <!-- Browser Tab Title -->
     <title>davidsfriends</title> 
     <!-- Custom Heart Logo (Favicon) for the Browser Tab -->
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My4wcmcvMjAwMC9zdmcgeD0iMHB4IiB5PSIwcHgiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCAxMDAgMTAwIiB4bWw6c3BhY2U9InByZXNlcnZlIj48Y2lyY2xlIGZpbGw9IiMyNTY1RUIiIGN4PSI1MCIgY3k9IjUwIiByPSI0OCIvPjx0ZXh0IHg9IjUwJSIgeT0iNjAlIiBkb21pbm5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSI2MCIgZmlsbD0id2hpdGUiPuKUgTwvdGV4dD48L2NpcmNsZT48L2NpcmNsZT48L3N2ZyHl">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5wcm9qZWN0b3JnLzIwMDAvc3ZnIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMTAwIDEwMCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PGNpcmNsZSBmaWxsPSIjMjU2NUVCIiBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiLz48dGV4dCB4PSI1MCUiIHk9IjYwJSIgZG9taW5uYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iNjAiIGZpbGw9IndoaXRlIj7ilIE8L3RleHQ+PC9jaXJjbGU+PC9zdmc+l">
     
     <!-- Include Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,8 +18,31 @@
         // Ensure 'signOut' is imported
         import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         
+        // --- START: FIREBASE CONFIG FIX FOR NETLIFY ---
+        // Fallback configuration for when running outside the Canvas environment (like Netlify)
+        const FALLBACK_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyB_REPLACE_ME_WITH_YOUR_KEY_Q7I", 
+            authDomain: "your-project-id.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project-id.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdefg1234567890"
+        };
+        
+        // Use the Canvas-provided config OR the fallback config
+        let firebaseConfig;
+        if (typeof __firebase_config !== 'undefined') {
+             firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+             // WARNING: If you are seeing this on Netlify, you must replace the values in 
+             // FALLBACK_FIREBASE_CONFIG with your actual Firebase project credentials
+             // to ensure proper security and logging.
+             firebaseConfig = FALLBACK_FIREBASE_CONFIG;
+             console.warn("Using fallback Firebase config. Please update credentials on Netlify deploy.");
+        }
+        // --- END: FIREBASE CONFIG FIX FOR NETLIFY ---
+
         // Firebase Auth Setup
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         
