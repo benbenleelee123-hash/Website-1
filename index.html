@@ -6,7 +6,7 @@
     <!-- Browser Tab Title -->
     <title>davidsfriends</title> 
     <!-- Custom Heart Logo (Favicon) for the Browser Tab -->
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5wcm9qZWN0b3JnLzIwMDAvc3ZnIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZW5hYmFnZy1yZ3JvdW5kPSJuZXcgMCAwIDEwMCAxMDAiIHhtbDpzcGFjZT0icHJlc2VydmUiPjxjaXJjbGUgZmlsbD0iIzI1NjVFIiBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiLz48dGV4dCB4PSI1MCUiIHk9IjYwJSIgZG9taW5uYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iNjAiIGZpbGw9IndoaXRlIj7ilIE8L3RleHQ+PC9jaXJjbGU+PC9zdmc+l">
+    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5wcm9qZWN0b3JnLzIwMDAvc3ZnIHg9IjBweCI yeT0iMHB4IiB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgZW5hYmFnZS1yZ3JvdW5kPSJuZXcgMCAwIDEwMCAxMDAiIHhtbDpzcGFjZT0icHJlc2VydmUiPjxjaXJjbGUgZmlsbD0iIzI1NjVFIiBjeD0iNTAiIGN5PSI1MCIgcj0iNDgiLz48dGV4dCB4PSI1MCUiIHk9IjYwJSIgZG9taW5uYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iNjAiIGZpbGw9IndoaXRlIj7ilIE8L3RleHQ+PC9jaXJjbGU+PC9zdmc+l">
     
     <!-- Include Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,6 +51,9 @@
         const SUPABASE_KEY = 'sb_publishable_8PphXvTLOpaqfbRlh_1W7A_ka4j7wXZ'; 
         const { createClient } = supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // --- IMPORTANT: DEFINE THE TABLE NAME HERE ---
+        const TABLE_NAME = 'students';
 
         // Get elements
         const authStatusElement = document.getElementById('auth-status');
@@ -107,7 +110,7 @@
                 
             } else {
                 // STATE 2: Anonymous Firebase User or Fully Logged Out
-                authStatusElement.classList.add('bg-blue-200', 'text-blue-800', 'hover:bg-blue-300');
+                authStatusElement.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
                 authStatusElement.textContent = 'Sign In'; 
                 authStatusElement.title = `Click to sign in with your Student ID.`;
                 
@@ -170,14 +173,14 @@
 
             // 1. Fetch data from Supabase
             const { data: students, error } = await supabaseClient
-                .from('students')
-                .select('student_id, first_name, last_name') // Fetch first_name and last_name
+                .from(TABLE_NAME) 
+                .select('student_id, first_name, last_name') 
                 .eq('student_id', studentId)
                 .limit(1);
 
             if (error) {
                 console.error('Supabase Login Error:', error);
-                modalMessageArea.textContent = 'Error contacting database.';
+                modalMessageArea.textContent = `Error contacting database. Check if table '${TABLE_NAME}' exists and RLS is correct.`;
             } else if (students && students.length === 1) {
                 // 2. Success! Set the student identity
                 const student = students[0];
@@ -198,13 +201,15 @@
                 setTimeout(() => messageArea.textContent = '', 3000);
             } else {
                 // 3. Student ID not found
-                modalMessageArea.textContent = 'Student ID not found in the system.';
+                // UPDATED ERROR TEXT FOR CLARITY
+                modalMessageArea.textContent = 'Student ID not found. Please register first.';
                 modalMessageArea.className = 'text-sm text-center text-red-600 font-medium mt-2';
             }
             
             // Reset modal state
             modalSubmitButton.disabled = false;
-            modalSubmitButton.textContent = 'Sign In';
+            // NOTE: Must use the text that is currently on the button in the HTML when resetting.
+            modalSubmitButton.textContent = 'You can sign in!'; 
         }
         
         // Function to handle account deletion confirmation
@@ -213,12 +218,12 @@
             const form = event.target;
             // Get elements from the confirmation modal (now using combined name)
             const studentIdInput = form.elements['confirm-delete-student-id'];
-            const fullNameInput = form.elements['confirm-delete-full-name']; // UPDATED
+            const fullNameInput = form.elements['confirm-delete-full-name']; 
             const deleteMessageArea = document.getElementById('confirm-delete-message-area');
             const confirmButton = document.getElementById('confirm-delete-button');
 
             const enteredId = studentIdInput.value.trim();
-            const enteredFullName = fullNameInput.value.trim(); // NEW
+            const enteredFullName = fullNameInput.value.trim(); 
 
             // Split the entered full name for validation
             let enteredFirstName = '';
@@ -247,21 +252,20 @@
             const lastNameMatch = enteredLastName.toLowerCase() === storedLastName.toLowerCase();
 
             if (!idMatch || !firstNameMatch || !lastNameMatch) {
-                // UPDATED ERROR MESSAGE
+                // Error message changed to explicitly check both fields
                 deleteMessageArea.textContent = 'Error: The Student ID or the First and Last Name does not match your logged-in account.';
                 deleteMessageArea.className = 'text-sm text-center text-red-600 font-medium mt-2';
                 return;
             }
 
             confirmButton.disabled = true;
-            // TEXT CHANGE: "Permanently Deleting..." -> "Removing..."
             confirmButton.textContent = 'Removing...';
             deleteMessageArea.textContent = '';
             deleteMessageArea.className = '';
 
             // 2. Perform Supabase Deletion
             const { error } = await supabaseClient
-                .from('students')
+                .from(TABLE_NAME) 
                 .delete()
                 .eq('student_id', studentIdToDelete);
 
@@ -273,7 +277,6 @@
                 confirmButton.textContent = 'Confirm Delete';
             } else {
                 // 3. Success! Log out and reset views
-                // TEXT CHANGE: "successfully deleted." -> "successfully removed."
                 deleteMessageArea.textContent = 'Account successfully removed. Closing modal and logging out...';
                 deleteMessageArea.className = 'text-sm text-center text-green-700 font-medium mt-2';
                 
@@ -283,11 +286,10 @@
                 // Perform Firebase Sign Out
                 await signOut(auth).catch(err => console.error("Firebase Sign-out error after Supabase delete:", err));
                 
-                // FIX: Call updateAuthStatus(null) to ensure the UI immediately reflects the signed-out state.
+                // Call updateAuthStatus(null) to ensure the UI immediately reflects the signed-out state.
                 updateAuthStatus(null); 
                 
                 // Show success on main form area and switch view
-                // TEXT CHANGE: "permanently deleted." -> "successfully removed."
                 messageArea.textContent = 'Your account has been successfully removed.';
                 messageArea.className = 'text-sm text-center text-green-700 font-medium';
                 
@@ -413,7 +415,7 @@
 
             // Get form values (now using a single combined name field)
             const studentId = document.getElementById('student-id').value;
-            const fullName = document.getElementById('full-name').value.trim(); // NEW
+            const fullName = document.getElementById('full-name').value.trim(); 
             const schoolEmail = document.getElementById('school-email').value;
             const gradeLevel = document.getElementById('grade-level').value; 
             
@@ -435,7 +437,7 @@
             
             // Send data to Supabase 
             const { error } = await supabaseClient
-                .from('students')
+                .from(TABLE_NAME) 
                 .insert([
                     { 
                         student_id: studentId, 
@@ -452,14 +454,15 @@
                 let errorMessage = `Error: Submission failed.`;
                 
                 if (error.code === '23505') {
+                    // --- UPDATED ERROR MESSAGE ---
                     if (error.message.includes('student_id')) {
-                        errorMessage = `Error: This Student ID has already been submitted.`;
+                        errorMessage = `Error: This Student ID is already registered. Please use the 'Sign In' button at the top right to log in or use a new ID to register.`;
                     } else if (error.message.includes('school_email')) {
                         errorMessage = `Error: This School Email has already been used.`;
                     }
                 }
                 else if (error.code === 'PGRST001' || error.message.includes('permission denied')) {
-                     errorMessage = `Error: Cannot save data. Check RLS policies for the 'students' table.`;
+                     errorMessage = `Error: Cannot save data. Check RLS policies for the '${TABLE_NAME}' table.`;
                 } 
                 
                 messageArea.textContent = errorMessage;
@@ -468,7 +471,7 @@
                 submitButton.textContent = 'Submit';
             } else {
                 // Handle success
-                messageArea.textContent = 'Form submitted successfully! Thank you.';
+                messageArea.textContent = 'Form submitted successfully! You can now use the "Sign In" button to manage your account.';
                 messageArea.className = 'text-sm text-center text-green-700 font-medium'; 
                 
                 studentForm.reset(); 
@@ -477,7 +480,7 @@
                     submitButton.disabled = false;
                     submitButton.textContent = 'Submit';
                     messageArea.textContent = '';
-                }, 3000); 
+                }, 5000); 
             }
         });
         
@@ -625,7 +628,8 @@
 <body class="bg-teal-100 min-h-screen grid place-items-center">
 
     <!-- Auth Status Button (Log In/Log Out) -->
-    <button id="auth-status" class="fixed top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full shadow-lg transition duration-150 ease-in-out cursor-pointer hover:shadow-xl">
+    <!-- Updated the default color to match the primary blue -->
+    <button id="auth-status" class="fixed top-4 right-4 text-xs font-semibold px-3 py-1 rounded-full shadow-lg transition duration-150 ease-in-out cursor-pointer hover:shadow-xl bg-blue-600 text-white hover:bg-blue-700">
         Signing In...
     </button>
 
@@ -646,8 +650,9 @@
             
             <!-- HEADER SECTION -->
             <div class="mb-6 text-center">
-                <!-- CORRECTED TITLE -->
-                <h1 class="text-3xl font-bold text-blue-600">Hello my friends sign here!</h1>
+                <!-- 1. UPDATED TITLE -->
+                <h1 class="text-3xl font-bold text-blue-600">Hello my friends sign Here!</h1>
+                <!-- 2. REMOVED SUBTITLE -->
             </div>
             <!-- END HEADER SECTION -->
             
@@ -656,7 +661,7 @@
                     
                     <!-- Student ID Field -->
                     <div>
-                        <label for="student-id" class="block text-sm font-medium text-gray-700">Student ID</label> 
+                        <label for="student-id" class="block text-sm font-medium text-gray-700">Student ID (6 Digits)</label> 
                         <div class="mt-1">
                             <input type="text" name="student-id" id="student-id" 
                                 class="block w-full rounded-md border-gray-300 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-3 border text-gray-900"
@@ -714,12 +719,18 @@
                     <div>
                         <button type="submit" id="submit-button"
                                 class="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-3 px-4 text-sm font-medium text-white shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 transition duration-150 ease-in-out">
-                            Submit
+                            Submit New Registration
                         </button>
                     </div>
 
                     <!-- Message area for success or error -->
                     <div id="message-area" class="text-sm text-center"></div>
+
+                    <!-- Explicit Sign-In Callout -->
+                    <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+                        <!-- 3. REMOVED BOLDING/ASTERISKS -->
+                        <p class="text-sm text-gray-600"> If you are already in my database, click the Sign In button in the top right corner.</p>
+                    </div>
                     
                 </div>
             </form>
@@ -744,8 +755,8 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.021 3.377 1.87 3.377h14.426c1.849 0 2.736-1.877 1.87-3.377L13.513 2.628a1.5 1.5 0 00-2.626 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                 </svg>
                 <h1 class="text-3xl font-bold text-red-600">Account Management</h1>
-                <p class="text-gray-600 mt-2">Manage your student info here.</p>
-                <p class="text-sm text-red-500 mt-4 font-medium">Warning: Deletion annoying.</p>
+                <p class="text-gray-600 mt-2">Manage your student record here.</p>
+                <p class="text-sm text-red-500 mt-4 font-medium">Warning: Deletion is permanent and cannot be undone.</p>
             </div>
             
             <!-- Button to trigger the confirmation modal -->
@@ -769,7 +780,7 @@
     </div>
 
 
-    <!-- LOGIN MODAL/OVERLAY (Remains the same) -->
+    <!-- LOGIN MODAL/OVERLAY (Updated Button Color and Text) -->
     <div id="login-modal" class="modal-backdrop hidden">
         <div class="bg-gray-50 p-8 rounded-xl shadow-2xl w-full max-w-sm relative transform transition-all duration-300 scale-100 opacity-100">
             
@@ -797,11 +808,11 @@
                         </div>
                     </div>
                     
-                    <!-- Sign In Button -->
+                    <!-- Sign In Button (Color and Text changed here) -->
                     <div>
                         <button type="submit" id="modal-submit-button"
-                                class="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-3 px-4 text-sm font-medium text-white shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 transition duration-150 ease-in-out">
-                            Sign In
+                                class="flex w-full justify-center rounded-md border border-transparent bg-blue-500 py-3 px-4 text-sm font-medium text-white shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white disabled:opacity-50 transition duration-150 ease-in-out">
+                            You can sign in!
                         </button>
                     </div>
 
@@ -838,7 +849,7 @@
                         <div class="mt-1">
                             <input type="text" name="confirm-delete-student-id" id="confirm-delete-student-id" 
                                 class="block w-full rounded-md border-gray-300 bg-white shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-3 border text-gray-900"
-                                placeholder="Re-enter your Student ID" required>
+                                placeholder="Re-enter your 6-digit Student ID" required>
                         </div>
                     </div>
                     
@@ -871,6 +882,3 @@
 
 </body>
 </html>
-
-
-
